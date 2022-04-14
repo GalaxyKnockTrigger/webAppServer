@@ -32,7 +32,7 @@ app = Flask(__name__)
 def postJsonHandler():
 	if request.method == 'POST':
 		try:
-			content = f.get_json()
+			content = request.get_json()
 			label=content[LABEL]
 			statusDir='real-data' if content[STATUS]==STATUS_REAL else 'fake-data'
 			pkeyDict=primary_key_of_real if content[STATUS]==STATUS_REAL else primary_key_of_fake
