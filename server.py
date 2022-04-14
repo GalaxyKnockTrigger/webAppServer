@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 from flask import Flask,request,jsonify
+from flask_inflate import Inflate,inflate
 import ssl,json,csv,time,os
 from collections import defaultdict
 SOUND_KEY='sound'
@@ -16,17 +17,22 @@ for filename in os.listdir('fake-data'):
 	label,pkey,_=filename.split('_')
 	primary_key_of_fake[label]=max(primary_key_of_fake[label],int(pkey))
 for filename in os.listdir('real-data'):
-	label,pkey,_=filename.split('_')
-	primary_key_of_real[label]=max(primary_key_of_real[label],int(pkey))
+	try:
+		label,pkey,_=filename.split('_')
+	except:
+		print(filename)
+	else:
+		primary_key_of_real[label]=max(primary_key_of_real[label],int(pkey))
 print(primary_key_of_real.items())
 app = Flask(__name__)
+#Inflate(app)
 
 @app.route('/', methods = ['GET','POST'])
+@inflate
 def postJsonHandler():
 	if request.method == 'POST':
 		try:
-			content = request.get_json()
-			#print(content)
+			content = f.get_json()
 			label=content[LABEL]
 			statusDir='real-data' if content[STATUS]==STATUS_REAL else 'fake-data'
 			pkeyDict=primary_key_of_real if content[STATUS]==STATUS_REAL else primary_key_of_fake
@@ -37,11 +43,12 @@ def postJsonHandler():
 				with open(f'{statusDir}/{label}_{pkeyDict[label]}_{key}.csv','w', newline='') as f:
 					w=csv.writer(f)
 					for val in content[key].split('\n'):
-						#timestamp,x,y,z
-						#id,val
+						#x,y,z
+						#val
 						w.writerow(val.split(','))
 			return 'done'
-		except:
+		except Exception as e:
+			print(e)
 			return 'error'
 	else:
 		return 'knot: hello,world!'
