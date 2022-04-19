@@ -1,8 +1,9 @@
-#-*- coding: utf-8 -*-
+#-*-  utf-8 -*-
 from flask import Flask,request,jsonify
-from flask_inflate import Inflate,inflate
-import ssl,json,csv,time,os
+#from flask_inflate import Inflate,inflate
+import ssl,json,csv,time,os,gzip
 from collections import defaultdict
+import io
 SOUND_KEY='sound'
 ACC_KEY='acc'
 GYRO_KEY='gyro'
@@ -28,11 +29,11 @@ app = Flask(__name__)
 #Inflate(app)
 
 @app.route('/', methods = ['GET','POST'])
-@inflate
+#@inflate
 def postJsonHandler():
 	if request.method == 'POST':
 		try:
-			content = request.get_json()
+			content=json.loads(gzip.decompress(request.get_data()).decode("utf-8"))
 			label=content[LABEL]
 			statusDir='real-data' if content[STATUS]==STATUS_REAL else 'fake-data'
 			pkeyDict=primary_key_of_real if content[STATUS]==STATUS_REAL else primary_key_of_fake
@@ -49,8 +50,9 @@ def postJsonHandler():
 			return 'done'
 		except Exception as e:
 			print(e)
+			#print(request.data)
 			return 'error'
 	else:
-		return 'knot: hello,world!'
-
+		return 'knot: hello,world'
 app.run(host='0.0.0.0', debug=True, port= 9999, ssl_context='adhoc')
+
