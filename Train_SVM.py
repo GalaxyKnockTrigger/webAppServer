@@ -82,7 +82,7 @@ def get_AllData():
                 allData[dataType][label][num][v] = np.array(nowData[v], dtype=np.float32)[:8]
     return allData
 
-def get_dataset(Data):    
+def get_dataset(allData):    
     data = []
     labels = []
     tabel = {}
@@ -187,7 +187,7 @@ def train():
     clf = svm.SVC(kernel='linear')
     clf.fit(X_train, y_train)
 
-
+train()
 # from sklearn.metrics import accuracy_score
 # y_pred = clf.predict(X_test)
 

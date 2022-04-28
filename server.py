@@ -43,8 +43,9 @@ app = Flask(__name__)
 clf=0
 with open("model_preproccessed.pkl", "rb") as f:
 	clf = pickle.load(f)
-   
-@app.route('/class/', methods = ['GET','POST'])
+
+
+@app.route('/class', methods = ['GET','POST'])
 def postJsonHandler_class():
 	if request.method == 'POST':
 		try:
@@ -102,5 +103,5 @@ def postJsonHandler():
 			#print(request.data)
 			return 'error'
 	else:
-		return 'knot: hello,world'
+		return 'knot: new hello,world'
 app.run(host='0.0.0.0', debug=True, port= 9999, ssl_context='adhoc')
