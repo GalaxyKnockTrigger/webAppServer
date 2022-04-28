@@ -1,3 +1,6 @@
 fake-data/
 real-data/
 temp*
+.venv
+__pycache__
+model_preproccessed.pkl
