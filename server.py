@@ -24,7 +24,10 @@ STATUS_FAKE='fake'
 STATUS_REAL='real'
 primary_key_of_fake=defaultdict(int)
 primary_key_of_real=defaultdict(int)
-
+with open('table.pkl', 'rb') as f:
+        key_table = pickle.load(f)
+table = {key_table[k]:k for k in key_table.keys()}
+print(table)
 for filename in os.listdir('fake-data'):
 	label,pkey,_=filename.split('_')
 	primary_key_of_fake[label]=max(primary_key_of_fake[label],int(pkey))
@@ -65,10 +68,10 @@ def postJsonHandler_class():
 				data[key] = temp
 			
 			feats = get_features(data[SOUND_KEY], data[ACC_KEY], data[GYRO_KEY]) #관측값들 입력
-			class__ = clf.predict(feats)        #classifier 결과값
-			print(class__)
+			class_ = clf.predict(feats)        #classifier 결과값
+			print(class_,content[LABEL])
                                 
-			return class__
+			return class_[0]
 		    
 		except Exception as e:
 			print(e)
@@ -84,24 +87,56 @@ def postJsonHandler():
 		try:
 			content=json.loads(gzip.decompress(request.get_data()).decode("utf-8"))
 			label=content[LABEL]
-			statusDir='real-data' if content[STATUS]==STATUS_REAL else 'fake-data'
-			pkeyDict=primary_key_of_real if content[STATUS]==STATUS_REAL else primary_key_of_fake
-			pkeyDict[label]+=1
-			for key in DATA:
-				if key not in content.keys():
-					continue
-				with open(f'{statusDir}/{label}_{pkeyDict[label]}_{key}.csv','w', newline='') as f:
-					w=csv.writer(f)
-					for val in content[key].split('\n'):
-						#x,y,z
-						#val
-						w.writerow(val.split(','))
-                                
-			return 'done'
+			if content[STATUS]==STATUS_REAL:    #save data
+                                statusDir='real-data'
+                                pkeyDict=primary_key_of_real if content[STATUS]==STATUS_REAL else primary_key_of_fake
+                                pkeyDict[label]+=1
+                                for key in DATA:
+                                        if key not in content.keys():
+                                                continue
+                                        with open(f'{statusDir}/{label}_{pkeyDict[label]}_{key}.csv','w', newline='') as f:
+                                                w=csv.writer(f)
+                                                for val in content[key].split('\n'):
+                                                        w.writerow(val.split(','))
+
+			else:    #classify
+                                try:
+                                        content=json.loads(gzip.decompress(request.get_data()).decode("utf-8"))
+                        
+                                        data = {SOUND_KEY:[],ACC_KEY:[],GYRO_KEY:[]}
+
+                                        for key in DATA:
+                                                if key not in content.keys():
+                                                        continue
+                                                temp=[]
+                                                for val in content[key].split('\n')[0 if key==SOUND_KEY else 1:-1]:
+                                                        temp.append(list(map(float, val.split(','))))
+                        
+                                                data[key] = numpy.array(temp)
+                                        #print("hello")
+                                        feats = get_features_test(data[SOUND_KEY], data[ACC_KEY], data[GYRO_KEY]) #관측값들 입력
+                                        #print("hello")
+                                        claass = clf.predict([feats])        #classifier 결과값
+                                        #print("hello")
+                                        print("class: "+table[claass[0]])
+                                        print("real : "+label)
+                                        
+                                        #print(claass[0])
+                                        
+                                        return table[claass[0]]
+                    
+                                except Exception as e:
+                                        print(e)
+                                        #print(request.data)
+                                        return 'error'
+
 		except Exception as e:
 			print(e)
 			#print(request.data)
 			return 'error'
+		else:
+			return 'done'
 	else:
 		return 'knot: new hello,world'
 app.run(host='0.0.0.0', debug=True, port= 9999, ssl_context='adhoc')
+

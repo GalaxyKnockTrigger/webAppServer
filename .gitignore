@@ -4,3 +4,4 @@ temp*
 .venv
 __pycache__
 model_preproccessed.pkl
+.pkl

@@ -8,7 +8,7 @@ import numpy as np
 import os
 import csv
 
-import librosa, numpy
+import librosa, numpy, pickle
 from scipy.fftpack import fft
 from sklearn.model_selection import train_test_split
 
@@ -158,11 +158,49 @@ def get_features(d):
     print(dataset_gyr_z_mag.dtype)
     """
     return np.concatenate ((dataset_sound_mag, dataset_sound_mag_log, dataset_mfccs, abs(dataset_acc_x_mag[:129]), abs(dataset_gyr_z_mag[:129])))
+def get_features_test(sound, acc, gyr):
+    dataset_sound = np.array(sound.T[0])
+    print(sound.shape)
+    dataset_acc_x, dataset_acc_y, dataset_acc_z = np.array(acc).T
+    dataset_gyr_x, dataset_gyr_y, dataset_gyr_z = np.array(gyr).T
+    """
+    dataset_sound = d[:4096]
+    dataset_acc_x = d[4096:4104]
+    dataset_acc_y = d[4104:4112]
+    dataset_acc_z = d[4112:4120]
+    dataset_gyr_x = d[4120:4128]
+    dataset_gyr_y = d[4128:4136]
+    dataset_gyr_z = d[4136:4144]
+    """
+    dataset_sound_mag = fft(dataset_sound)
+    dataset_sound_mag = abs(dataset_sound_mag[:2049])
+    if 0 in dataset_sound_mag:
+        dataset_sound_mag = np.where(dataset_sound_mag==0, 0.0000001, dataset_sound_mag)
+    dataset_sound_mag_log = np.log(dataset_sound_mag)
+    
+    dataset_mfccs = get_mfccs(dataset_sound).flatten()
+
+    
+    dataset_acc_x = np.pad(dataset_acc_x, ((0, 248)), 'constant')
+    dataset_acc_x_mag = abs(fft(dataset_acc_x))
+    
+    dataset_gyr_z = np.pad(dataset_gyr_z, ((0, 248)), 'constant')
+    dataset_gyr_z_mag = abs(fft(dataset_gyr_z))
+    
+    """
+    print(dataset_sound_mag)
+    print(dataset_sound_mag_log.dtype)
+    print(dataset_mfccs.dtype)
+    print(dataset_acc_x_mag.dtype)
+    print(dataset_gyr_z_mag.dtype)
+    """
+    return np.concatenate ((dataset_sound_mag, dataset_sound_mag_log, dataset_mfccs, abs(dataset_acc_x_mag[:129]), abs(dataset_gyr_z_mag[:129])))
 
 def train():
     allData = get_AllData()
-    dataset, labels, tabel = get_dataset(allData)
-
+    dataset, labels, table = get_dataset(allData)
+    with open('table.pkl', 'wb') as f:
+        pickle.dump(table, f)
     X_train, X_test, y_train, y_test = train_test_split(dataset, labels, test_size=0.33, random_state=42)
 
 
@@ -180,12 +218,13 @@ def train():
             print(i, '/', len(X_test))
         dataset_test_pre[i] = get_features(d)
 
-    import pickle
-
     from sklearn import svm
 
     clf = svm.SVC(kernel='linear')
-    clf.fit(X_train, y_train)
+    clf.fit(dataset_pre, y_train)
+    with open('model_preproccessed.pkl', 'wb') as f:
+        pickle.dump(clf, f)
+
 
 train()
 # from sklearn.metrics import accuracy_score
