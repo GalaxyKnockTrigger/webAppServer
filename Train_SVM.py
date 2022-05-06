@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import csv
-
 import librosa, numpy, pickle
 from scipy.fftpack import fft
 from sklearn.model_selection import train_test_split
@@ -82,7 +81,7 @@ def get_AllData():
                 allData[dataType][label][num][v] = np.array(nowData[v], dtype=np.float32)[:8]
     return allData
 
-def get_dataset(allData):    
+def get_dataset(allData):
     data = []
     labels = []
     tabel = {}
@@ -158,6 +157,7 @@ def get_features(d):
     print(dataset_gyr_z_mag.dtype)
     """
     return np.concatenate ((dataset_sound_mag, dataset_sound_mag_log, dataset_mfccs, abs(dataset_acc_x_mag[:129]), abs(dataset_gyr_z_mag[:129])))
+
 def get_features_test(sound, acc, gyr):
     dataset_sound = np.array(sound.T[0])
     print(sound.shape)
