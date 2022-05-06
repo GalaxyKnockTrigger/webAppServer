@@ -11,7 +11,7 @@ import io
 import pickle
 import librosa, numpy
 from scipy.fftpack import fft
-
+import datetime
 from Train_SVM import *
 
 SOUND_KEY='sound'
@@ -52,8 +52,9 @@ with open("model_preproccessed.pkl", "rb") as f:
 def postJsonHandler_class():
 	if request.method == 'POST':
 		try:
+			starttime=datetime.datetime.now()
 			content=json.loads(gzip.decompress(request.get_data()).decode("utf-8"))
-			
+			print('degzip: ',(datetime.datetime.now()-starttime).microseconds)
 			data = {SOUND_KEY:[],ACC_KEY:[],GYRO_KEY:[]}
 
 			for key in DATA:
@@ -85,7 +86,9 @@ def postJsonHandler_class():
 def postJsonHandler():
 	if request.method == 'POST':
 		try:
+			#starttime=datetime.datetime.now()
 			content=json.loads(gzip.decompress(request.get_data()).decode("utf-8"))
+			#print('degzip time: ',(datetime.datetime.now()-starttime).microseconds)
 			label=content[LABEL]
 			if content[STATUS]==STATUS_REAL:    #save data
                                 statusDir='real-data'
@@ -101,8 +104,8 @@ def postJsonHandler():
 
 			else:    #classify
                                 try:
-                                        content=json.loads(gzip.decompress(request.get_data()).decode("utf-8"))
-                        
+                                        #content=json.loads(gzip.decompress(request.get_data()).decode("utf-8"))
+                                        #starttime=datetime.datetime.now()
                                         data = {SOUND_KEY:[],ACC_KEY:[],GYRO_KEY:[]}
 
                                         for key in DATA:
@@ -113,11 +116,11 @@ def postJsonHandler():
                                                         temp.append(list(map(float, val.split(','))))
                         
                                                 data[key] = numpy.array(temp)
-                                        #print("hello")
                                         feats = get_features_test(data[SOUND_KEY], data[ACC_KEY], data[GYRO_KEY]) #관측값들 입력
-                                        #print("hello")
+                                        #print('get feats time: ',(datetime.datetime.now()-starttime).microseconds)
+                                        #starttime=datetime.datetime.now()
                                         claass = clf.predict([feats])        #classifier 결과값
-                                        #print("hello")
+                                        #print('get class time: ',(datetime.datetime.now()-starttime).microseconds)
                                         print("class: "+table[claass[0]])
                                         print("real : "+label)
                                         
