@@ -5,3 +5,4 @@ temp*
 __pycache__
 model_preproccessed.pkl
 *.pkl
+*Test.py
