@@ -15,7 +15,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 parentPath = '/home/kimminju/knot-server/real-data/'
-types = ('sound', 'acc', 'gyro')
+#types = ('sound', 'acc', 'gyro')
 
 def get_AllData():
     # for path in os.listdir(parentPath):
@@ -26,22 +26,26 @@ def get_AllData():
     #     elif 'gyro' in path:
     #         paths['gyro'].append(path)
 
-    allData = {}
-    for dataType in types:
-        allData[dataType]={}
+    #allData = {}
+    #for dataType in types:
+    #    allData[dataType]={}
+    allData={'sound':{}}
 
     for path in os.listdir(parentPath):
         if not '.csv' in path:
             continue
         # print(path)
-        label,num,dataType = path.split('_')
-        
+        #label,num,dataType = path.split('_')
+        label,num=path.split('_')
+        num=num.split('.')[0]
+        dataType='sound'
+
         # if label != 'clap':
         #     continue
         
-        dataType = dataType.split('.')[0]
+        #dataType = dataType.split('.')[0]
         
-        if not label in allData[dataType].keys():
+        if not label in allData[dataType]:
             allData[dataType][label] = {}
         
         allData[dataType][label][num] = {}
@@ -49,36 +53,39 @@ def get_AllData():
         nowData = allData[dataType][label][num]
         
         nowData['timestamp'] = []
-        if dataType == 'sound':
-            nowData['value'] = []
-        else :
-            for v in ('x', 'y', 'z'):
-                nowData[v] = []
+        #if dataType == 'sound':
+        #    nowData['value'] = []
+        #else :
+        #    for v in ('x', 'y', 'z'):
+        #        nowData[v] = []
+        
+
         with open(os.path.join(parentPath, path)) as file:
             reader = csv.reader(file)
-            
-            # i = 0
-            for raw in reader:
-                if '#' in raw[0]:
-                    continue
-                if raw[0] == '':
-                    break
-                if dataType == 'sound':
-                    nowData['value'].append(int(raw[0]))
-                else :
-                    k = 0
-                    for v in ('x', 'y', 'z'):
-                        # print(raw[k])
-                        nowData[v].append(float(raw[k]))
-                        k+=1
-                # i+=1
-            file.close()
+            nowData['value']=list(map(float,next(reader)))
+            #
+            ## i = 0
+            #for raw in reader:
+            #    if '#' in raw[0]:
+            #        continue
+            #    if raw[0] == '':
+            #        break
+            #    if dataType == 'sound':
+            #        nowData['value'].append(int(raw[0]))
+            #    else :
+            #        k = 0
+            #        for v in ('x', 'y', 'z'):
+            #            # print(raw[k])
+            #            nowData[v].append(float(raw[k]))
+            #            k+=1
+            #    # i+=1
         
-        if dataType == 'sound':
-            allData[dataType][label][num]['value'] = np.array(nowData['value'], dtype=np.int16)[:4096]
-        else :
-            for v in ('x', 'y', 'z'):
-                allData[dataType][label][num][v] = np.array(nowData[v], dtype=np.float32)[:8]
+        allData[dataType][label][num]['value']=np.array(nowData['value'],dtype=np.float32)[:4096]
+        #if dataType == 'sound':
+        #    allData[dataType][label][num]['value'] = np.array(nowData['value'], dtype=np.int16)[:4096]
+        #else :
+        #    for v in ('x', 'y', 'z'):
+        #        allData[dataType][label][num][v] = np.array(nowData[v], dtype=np.float32)[:8]
     return allData
 
 
@@ -86,18 +93,22 @@ def get_dataset(allData):
     data = []
     labels = []
     tabel = {}
-    for label in allData[types[0]]:
-        for num in allData[types[0]][label]:
-            temp = []
-            for dataType in types:
-                if dataType == 'sound':
-                    temp = allData[dataType][label][num]['value']
-                    if label not in tabel:
-                        tabel[label] = len(tabel.keys())
-                    labels.append(tabel[label])
-                else :
-                    for v in ('x', 'y', 'z'):
-                        temp = np.concatenate((temp, allData[dataType][label][num][v]))
+    for label in allData['sound']:
+        for num in allData['sound'][label]:
+            temp = allData['sound'][label][num]['value']
+            if label not in tabel:
+                tabel[label]=len(tabel.keys())
+            labels.append(tabel[label])
+
+            #for dataType in types:
+            #    if dataType == 'sound':
+            #        temp = allData[dataType][label][num]['value']
+            #        if label not in tabel:
+            #            tabel[label] = len(tabel.keys())
+            #        labels.append(tabel[label])
+            #    else :
+            #        for v in ('x', 'y', 'z'):
+            #            temp = np.concatenate((temp, allData[dataType][label][num][v]))
                         
             if len(data)==0:
                 data = np.array([temp])
@@ -128,12 +139,12 @@ def get_features(d):
     dataset_gyr_x, dataset_gyr_y, dataset_gyr_z = np.array(gyr).T
     """
     dataset_sound = d[:4096]
-    dataset_acc_x = d[4096:4104]
-    dataset_acc_y = d[4104:4112]
-    dataset_acc_z = d[4112:4120]
-    dataset_gyr_x = d[4120:4128]
-    dataset_gyr_y = d[4128:4136]
-    dataset_gyr_z = d[4136:4144]
+    #dataset_acc_x = d[4096:4104]
+    #dataset_acc_y = d[4104:4112]
+    #dataset_acc_z = d[4112:4120]
+    #dataset_gyr_x = d[4120:4128]
+    #dataset_gyr_y = d[4128:4136]
+    #dataset_gyr_z = d[4136:4144]
     dataset_sound_mag = fft(dataset_sound)
     dataset_sound_mag = abs(dataset_sound_mag[:2049])
     if 0 in dataset_sound_mag:
@@ -144,11 +155,11 @@ def get_features(d):
 
 
     
-    dataset_acc_x = np.pad(dataset_acc_x, ((0, 248)), 'constant')
-    dataset_acc_x_mag = abs(fft(dataset_acc_x))
-    
-    dataset_gyr_z = np.pad(dataset_gyr_z, ((0, 248)), 'constant')
-    dataset_gyr_z_mag = abs(fft(dataset_gyr_z))
+    #dataset_acc_x = np.pad(dataset_acc_x, ((0, 248)), 'constant')
+    #dataset_acc_x_mag = abs(fft(dataset_acc_x))
+    #
+    #dataset_gyr_z = np.pad(dataset_gyr_z, ((0, 248)), 'constant')
+    #dataset_gyr_z_mag = abs(fft(dataset_gyr_z))
     
     """
     print(dataset_sound_mag)
@@ -157,14 +168,14 @@ def get_features(d):
     print(dataset_acc_x_mag.dtype)
     print(dataset_gyr_z_mag.dtype)
     """
-    return np.concatenate ((dataset_sound_mag, dataset_sound_mag_log, dataset_mfccs, abs(dataset_acc_x_mag[:129]), abs(dataset_gyr_z_mag[:129])))
+    return np.concatenate ((dataset_sound_mag, dataset_sound_mag_log, dataset_mfccs))
 
 
-def get_features_test(sound, acc, gyr):
+def get_features_test(sound):
     dataset_sound = np.array(sound.T[0])
-    print(sound.shape)
-    dataset_acc_x, dataset_acc_y, dataset_acc_z = np.array(acc).T
-    dataset_gyr_x, dataset_gyr_y, dataset_gyr_z = np.array(gyr).T
+    #print(sound.shape)
+    #dataset_acc_x, dataset_acc_y, dataset_acc_z = np.array(acc).T
+    #dataset_gyr_x, dataset_gyr_y, dataset_gyr_z = np.array(gyr).T
     """
     dataset_sound = d[:4096]
     dataset_acc_x = d[4096:4104]
@@ -183,11 +194,11 @@ def get_features_test(sound, acc, gyr):
     dataset_mfccs = get_mfccs(dataset_sound).flatten()
 
     
-    dataset_acc_x = np.pad(dataset_acc_x, ((0, 248)), 'constant')
-    dataset_acc_x_mag = abs(fft(dataset_acc_x))
-    
-    dataset_gyr_z = np.pad(dataset_gyr_z, ((0, 248)), 'constant')
-    dataset_gyr_z_mag = abs(fft(dataset_gyr_z))
+    #dataset_acc_x = np.pad(dataset_acc_x, ((0, 248)), 'constant')
+    #dataset_acc_x_mag = abs(fft(dataset_acc_x))
+    #
+    #dataset_gyr_z = np.pad(dataset_gyr_z, ((0, 248)), 'constant')
+    #dataset_gyr_z_mag = abs(fft(dataset_gyr_z))
     
     """
     print(dataset_sound_mag)
@@ -196,19 +207,20 @@ def get_features_test(sound, acc, gyr):
     print(dataset_acc_x_mag.dtype)
     print(dataset_gyr_z_mag.dtype)
     """
-    return np.concatenate ((dataset_sound_mag, dataset_sound_mag_log, dataset_mfccs, abs(dataset_acc_x_mag[:129]), abs(dataset_gyr_z_mag[:129])))
+    return np.concatenate ((dataset_sound_mag, dataset_sound_mag_log, dataset_mfccs))
 
 def train():
     allData = get_AllData()
     dataset, labels, table = get_dataset(allData)
+    #print(dataset)
     with open('table.pkl', 'wb') as f:
         pickle.dump(table, f)
     X_train, X_test, y_train, y_test = train_test_split(dataset, labels, test_size=0.33, random_state=42)
 
 
 
-    dataset_pre = np.zeros((len(X_train), 5396))
-    dataset_test_pre = np.zeros((len(X_test), 5396))
+    dataset_pre = np.zeros((len(X_train), 5122))
+    dataset_test_pre = np.zeros((len(X_test), 5122))
     for i, d in enumerate(X_train):
         if i%1000 == 0:
             print(i, '/', len(X_train))
