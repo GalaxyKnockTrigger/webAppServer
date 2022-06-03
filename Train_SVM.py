@@ -16,7 +16,6 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 parentPath = '/home/kimminju/knot-server/real-data/'
 #types = ('sound', 'acc', 'gyro')
-
 def get_AllData():
     # for path in os.listdir(parentPath):
     #     if 'sound' in path:
@@ -219,8 +218,8 @@ def train():
 
 
 
-    dataset_pre = np.zeros((len(X_train), 5122))
-    dataset_test_pre = np.zeros((len(X_test), 5122))
+    dataset_pre = np.zeros((len(X_train), 5138))
+    dataset_test_pre = np.zeros((len(X_test), 5138))
     for i, d in enumerate(X_train):
         if i%1000 == 0:
             print(i, '/', len(X_train))
@@ -240,7 +239,7 @@ def train():
         pickle.dump(clf, f)
 
 
-train()
+
 # from sklearn.metrics import accuracy_score
 # y_pred = clf.predict(X_test)
 
