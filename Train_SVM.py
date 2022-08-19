@@ -29,13 +29,13 @@ def get_AllData():
     #for dataType in types:
     #    allData[dataType]={}
     allData={'sound':{}}
-
+    command_hash = {}
     for path in os.listdir(parentPath):
         if not '.csv' in path:
             continue
         # print(path)
         #label,num,dataType = path.split('_')
-        label,num=path.split('_')
+        command,label,num=path.split('_')
         num=num.split('.')[0]
         dataType='sound'
 
@@ -45,6 +45,7 @@ def get_AllData():
         #dataType = dataType.split('.')[0]
         
         if not label in allData[dataType]:
+            command_hash[label] = command
             allData[dataType][label] = {}
         
         allData[dataType][label][num] = {}
@@ -85,7 +86,7 @@ def get_AllData():
         #else :
         #    for v in ('x', 'y', 'z'):
         #        allData[dataType][label][num][v] = np.array(nowData[v], dtype=np.float32)[:8]
-    return allData
+    return allData, command_hash
 
 
 def get_dataset(allData):
@@ -209,11 +210,13 @@ def get_features_test(sound):
     return np.concatenate ((dataset_sound_mag, dataset_sound_mag_log, dataset_mfccs))
 
 def train():
-    allData = get_AllData()
+    allData, command_hash = get_AllData()
     dataset, labels, table = get_dataset(allData)
     #print(dataset)
     with open('table.pkl', 'wb') as f:
         pickle.dump(table, f)
+    with open('command.pkl', 'wb') as f:
+        pickle.dump(command_hash, f)
     X_train, X_test, y_train, y_test = train_test_split(dataset, labels, test_size=0.33, random_state=42)
 
 
