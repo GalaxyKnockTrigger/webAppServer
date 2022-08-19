@@ -16,8 +16,10 @@ def socket_write(input_str):
 def sound_augmentation_lib(value, noise_factor=400):
     temp_data = []
     for k in range(10):
-        data_up = np.concatenate((value[:4048], np.zeros(48)))
-        data_down = np.concatenate((np.zeros(48), value[48:]))
+        #data_up = np.concatenate((value[48:], np.zeros(48)))
+        #data_down = np.concatenate((np.zeros(48), value[:4048]))
+        data_up = np.concatenate((value[48:], np.zeros(48)))
+        data_down = np.concatenate((np.zeros(48), value[:4096]))
         
         noise = np.random.randn(len(value))
         augmented_data = value + noise_factor * noise
@@ -77,8 +79,10 @@ def postJsonHandler():
     global table,command_table
     try:
         #starttime=datetime.datetime.now()
-        sound=gzip.decompress(request.get_data())
-        print(len(sound))
+        sound=gzip.decompress(request.get_data()).decode("utf-8")
+        print("sound len:",len(sound))
+        print("sound type:",type(sound))
+        print("last ten sound:",sound[:10])
 
         typeOfData=request.headers.get(TYPE)
         #print('degzip time: ',(datetime.datetime.now()-starttime).microseconds)
@@ -98,20 +102,31 @@ def postJsonHandler():
             cmdOfData=request.headers.get(CMD)
             labelOfData=request.headers.get(LABEL)
             pkeyDict=primary_key_of_real
-            sound_data = list(int.from_bytes(sound[i*2:i*2+2], "big",signed=True) for i in range(4096))
-            sound_data = np.array(sound_data)
+
+            #sound_data = list(int.from_bytes(sound[i*2:i*2+2], "big",signed=True) for i in range(4096))
+            #sound_data = np.array(sound_data)
             #print(sound_data.shape)
+
+            sound_data=np.array(list(map(float,sound.rstrip(',').split(','))))
+            print(sound_data.shape)
+            print('last data:',sound_data[10:])
+
             aug_sound_data = sound_augmentation_lib(sound_data, noise_factor=400)
+            print('last data after augm:',sound_data[10:])
             for data in aug_sound_data:
                 pkeyDict[labelOfData]+=1
                 with open(f'real-data/{cmdOfData}_{labelOfData}_{pkeyDict[labelOfData]}.csv','w', newline='') as f:
                     w=csv.writer(f)
-                    w.writerow(data[i] for i in range(4096))
+                    #w.writerow(data[i] for i in range(4096))
+                    w.writerow(data[i] for i in range(4144))
         #classify
         else:
             try:
                 #starttime=datetime.datetime.now()
-                feats = get_features_test(np.array([[float(int.from_bytes(sound[i*2:i*2+2], "big",signed=True))] for i in range(4096)])) #관측값들 입력
+                #feats = get_features_test(np.array([[float(int.from_bytes(sound[i*2:i*2+2], "big",signed=True))] for i in range(4096)])) #관측값들 입력
+                sound_data=map(float,sound.rstrip(',').split(','))
+                feats = get_features_test(np.array([[s] for s in sound_data])) #관측값들 입력
+
                 #print('get feats time: ',(datetime.datetime.now()-starttime).microseconds)
                 #starttime=datetime.datetime.now()
                 claass = clf.predict([feats])        #classifier 결과값
@@ -150,10 +165,10 @@ def threaded():
             print("disconnect!!!")
             client.close()
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('0.0.0.0', 8585 ))
-s.listen(1)
-start_new_thread(threaded,tuple())
+#s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#s.bind(('0.0.0.0', 8585 ))
+#s.listen(1)
+#start_new_thread(threaded,tuple())
 
 def handleExit():
     global s,client
@@ -161,7 +176,7 @@ def handleExit():
     if client:
         client.close()
     s.close()
-atexit.register(handleExit)
+#atexit.register(handleExit)
 
 app.run(host='0.0.0.0', port= 9999, ssl_context='adhoc')
 
